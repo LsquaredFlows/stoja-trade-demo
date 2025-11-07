@@ -6,9 +6,9 @@
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="Broker.hr - AI-Powered Real Estate Assistant Demo"
+      content="Stoja Trade - AI-Powered Real Estate Assistant Demo"
     />
-    <title>Broker.hr AI Assistant Demo</title>
+    <title>Stoja Trade AI Assistant Demo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
     <style>
       elevenlabs-convai {
         position: fixed !important;
-        left: 20px !important;
+        left: 40px !important;
         right: auto !important;
         top: 50% !important;
         bottom: auto !important;
@@ -37,7 +37,7 @@
       function positionWidget() {
         const widget = document.querySelector('elevenlabs-convai');
         if (widget) {
-          widget.style.cssText = 'position: fixed !important; left: 20px !important; right: auto !important; top: 50% !important; bottom: auto !important; transform: translateY(-50%) !important; z-index: 9998 !important;';
+          widget.style.cssText = 'position: fixed !important; left: 40px !important; right: auto !important; top: 50% !important; bottom: auto !important; transform: translateY(-50%) !important; z-index: 9998 !important;';
           
           // Also try to find and position any internal containers
           const iframe = widget.querySelector('iframe');
