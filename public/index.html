@@ -31,6 +31,36 @@
       }
     </style>
     <script>
+      // Inject styles into shadow DOM to fix positioning
+      function injectShadowStyles() {
+        const widget = document.querySelector('elevenlabs-convai');
+        if (!widget || !widget.shadowRoot) return;
+        
+        const shadowRoot = widget.shadowRoot;
+        
+        // Create or update style element in shadow DOM
+        let styleEl = shadowRoot.querySelector('style[data-position-fix]');
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.setAttribute('data-position-fix', 'true');
+          shadowRoot.appendChild(styleEl);
+        }
+        
+        // Inject CSS to override fixed positioning
+        styleEl.textContent = `
+          * {
+            position: relative !important;
+            left: 0 !important;
+            right: auto !important;
+          }
+          [style*="position: fixed"], [style*="position:fixed"] {
+            position: relative !important;
+            left: 0 !important;
+            right: auto !important;
+          }
+        `;
+      }
+      
       // Ensure widget container stays positioned correctly
       function ensureWidgetPosition() {
         const container = document.getElementById('elevenlabs-widget-container');
@@ -44,6 +74,9 @@
             pointer-events: none !important;
           `;
         }
+        
+        // Inject shadow DOM styles
+        injectShadowStyles();
       }
       
       // Run on load
@@ -55,6 +88,24 @@
       
       window.addEventListener('load', ensureWidgetPosition);
       window.addEventListener('resize', ensureWidgetPosition);
+      
+      // Aggressive polling to catch shadow DOM initialization
+      let attempts = 0;
+      const interval = setInterval(function() {
+        ensureWidgetPosition();
+        attempts++;
+        if (attempts > 40) clearInterval(interval);
+      }, 500);
+      
+      // MutationObserver for shadow DOM changes
+      const observer = new MutationObserver(function() {
+        ensureWidgetPosition();
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
     </script>
   </head>
   <body>
