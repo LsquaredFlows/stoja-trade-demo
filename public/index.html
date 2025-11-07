@@ -67,14 +67,49 @@
               }
             });
             
-            // Inject CSS that forces everything to static
+            // Hide "Powered by ElevenLabs" footer
+            const footerElements = shadowRoot.querySelectorAll('p, span, div');
+            footerElements.forEach(function(el) {
+              const text = el.textContent || '';
+              if (text.includes('Powered by ElevenLabs') || text.includes('ElevenLabs')) {
+                el.style.setProperty('display', 'none', 'important');
+                el.style.setProperty('visibility', 'hidden', 'important');
+                el.style.setProperty('opacity', '0', 'important');
+              }
+            });
+            
+            // Hide gradient/oval decorative elements (canvas or elements with gradient backgrounds)
+            const allElementsForHiding = shadowRoot.querySelectorAll('*');
+            allElementsForHiding.forEach(function(el) {
+              const computed = window.getComputedStyle(el);
+              const bg = computed.backgroundImage || computed.background || '';
+              // Hide elements with gradient backgrounds (the blue/teal oval)
+              if (bg.includes('gradient') || bg.includes('linear-gradient') || bg.includes('radial-gradient')) {
+                const rect = el.getBoundingClientRect();
+                // Only hide if it's a decorative element (not the main container)
+                if (rect.width > 50 && rect.height > 50 && el.tagName !== 'DIV') {
+                  el.style.setProperty('display', 'none', 'important');
+                }
+              }
+            });
+            
+            // Inject CSS that forces everything to static AND hides unwanted elements
             let styleEl = shadowRoot.querySelector('style[data-force-position]');
             if (!styleEl) {
               styleEl = document.createElement('style');
               styleEl.setAttribute('data-force-position', 'true');
               shadowRoot.insertBefore(styleEl, shadowRoot.firstChild);
             }
-            styleEl.textContent = '* { position: static !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; transform: none !important; }';
+            styleEl.textContent = `
+              * { position: static !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; transform: none !important; }
+              p:contains("Powered by"), p:contains("ElevenLabs"), 
+              span:contains("Powered by"), span:contains("ElevenLabs"),
+              *[class*="powered"], *[class*="elevenlabs"] {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+              }
+            `;
           }
         }
       }
