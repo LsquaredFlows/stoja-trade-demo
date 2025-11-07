@@ -38,51 +38,71 @@
         
         const shadowRoot = widget.shadowRoot;
         
-        // Find ALL elements in shadow DOM and fix any with fixed positioning
+        // Ensure widget element has proper display
+        widget.style.display = 'block';
+        widget.style.width = 'auto';
+        widget.style.height = 'auto';
+        widget.style.minWidth = '280px';
+        
+        // Find the root container div (first child of shadow root)
+        const rootContainer = shadowRoot.firstElementChild;
+        if (rootContainer) {
+          const rect = rootContainer.getBoundingClientRect();
+          const computedStyle = window.getComputedStyle(rootContainer);
+          const inlineStyle = rootContainer.getAttribute('style') || '';
+          
+          // Check if it's positioned off-screen or using fixed positioning
+          const isOffScreen = rect.left < -50 || rect.left > window.innerWidth;
+          const isFixed = computedStyle.position === 'fixed' || inlineStyle.includes('position: fixed') || inlineStyle.includes('position:fixed');
+          
+          if (isFixed || isOffScreen) {
+            // Force to static/relative and reset positioning
+            rootContainer.style.setProperty('position', 'static', 'important');
+            rootContainer.style.setProperty('left', 'auto', 'important');
+            rootContainer.style.setProperty('right', 'auto', 'important');
+            rootContainer.style.setProperty('top', 'auto', 'important');
+            rootContainer.style.setProperty('bottom', 'auto', 'important');
+            rootContainer.style.setProperty('transform', 'none', 'important');
+            rootContainer.style.setProperty('margin', '0', 'important');
+          }
+        }
+        
+        // Find and fix any other fixed-positioned elements
         const allElements = shadowRoot.querySelectorAll('*');
         allElements.forEach(function(el) {
           const computedStyle = window.getComputedStyle(el);
           const inlineStyle = el.getAttribute('style') || '';
+          const rect = el.getBoundingClientRect();
           
-          // If element is fixed positioned (computed or inline)
-          if (computedStyle.position === 'fixed' || inlineStyle.includes('position: fixed') || inlineStyle.includes('position:fixed')) {
-            // Force to relative positioning
-            el.style.setProperty('position', 'relative', 'important');
-            el.style.setProperty('left', '0', 'important');
+          // Only fix if it's actually fixed AND off-screen
+          if ((computedStyle.position === 'fixed' || inlineStyle.includes('position: fixed') || inlineStyle.includes('position:fixed')) && 
+              (rect.left < -50 || rect.left > window.innerWidth)) {
+            el.style.setProperty('position', 'static', 'important');
+            el.style.setProperty('left', 'auto', 'important');
             el.style.setProperty('right', 'auto', 'important');
             el.style.setProperty('top', 'auto', 'important');
             el.style.setProperty('bottom', 'auto', 'important');
             el.style.setProperty('transform', 'none', 'important');
           }
-          
-          // Also check for any left/right values that might position it off-screen
-          const rect = el.getBoundingClientRect();
-          if (rect.left < -100 || rect.right > window.innerWidth + 100) {
-            el.style.setProperty('left', '0', 'important');
-            el.style.setProperty('right', 'auto', 'important');
-          }
         });
         
-        // Also inject CSS as backup
+        // Inject minimal CSS - only target fixed positioned elements that are problematic
         let styleEl = shadowRoot.querySelector('style[data-position-fix]');
         if (!styleEl) {
           styleEl = document.createElement('style');
           styleEl.setAttribute('data-position-fix', 'true');
-          shadowRoot.appendChild(styleEl);
+          shadowRoot.insertBefore(styleEl, shadowRoot.firstChild);
         }
         
         styleEl.textContent = `
-          * {
-            position: relative !important;
-          }
-          *[style*="position: fixed"],
-          *[style*="position:fixed"] {
-            position: relative !important;
-            left: 0 !important;
+          :host > *:first-child {
+            position: static !important;
+            left: auto !important;
             right: auto !important;
             top: auto !important;
             bottom: auto !important;
             transform: none !important;
+            margin: 0 !important;
           }
         `;
       }
