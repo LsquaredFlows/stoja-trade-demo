@@ -102,14 +102,27 @@
             }
             styleEl.textContent = `
               * { position: static !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; transform: none !important; }
-              p:contains("Powered by"), p:contains("ElevenLabs"), 
-              span:contains("Powered by"), span:contains("ElevenLabs"),
-              *[class*="powered"], *[class*="elevenlabs"] {
-                display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
+              p, span, div {
+                position: static !important;
               }
             `;
+            
+            // More aggressive hiding - find elements by text content recursively
+            function hideByText(element) {
+              const text = (element.textContent || '').trim();
+              if (text.includes('Powered by') || text.includes('ElevenLabs') || text.includes('Agents')) {
+                element.style.setProperty('display', 'none', 'important');
+                element.style.setProperty('visibility', 'hidden', 'important');
+                element.style.setProperty('opacity', '0', 'important');
+                element.style.setProperty('height', '0', 'important');
+                element.style.setProperty('width', '0', 'important');
+                element.style.setProperty('padding', '0', 'important');
+                element.style.setProperty('margin', '0', 'important');
+              }
+              // Check children
+              Array.from(element.children).forEach(hideByText);
+            }
+            hideByText(shadowRoot);
           }
         }
       }
