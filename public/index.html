@@ -18,8 +18,9 @@
       #elevenlabs-widget-container {
         position: fixed !important;
         left: 20px !important;
-        top: 60% !important;
-        transform: translateY(-50%) !important;
+        bottom: 20px !important;
+        top: auto !important;
+        transform: none !important;
         z-index: 9998 !important;
         pointer-events: none !important;
       }
@@ -36,7 +37,7 @@
         // Fix container
         const container = document.getElementById('elevenlabs-widget-container');
         if (container) {
-          container.style.cssText = 'position: fixed !important; left: 20px !important; top: 60% !important; transform: translateY(-50%) !important; z-index: 9998 !important; pointer-events: none !important;';
+          container.style.cssText = 'position: fixed !important; left: 20px !important; bottom: 20px !important; top: auto !important; transform: none !important; z-index: 9998 !important; pointer-events: none !important;';
         }
         
         // Fix widget element
@@ -121,7 +122,7 @@
     <div id="root"></div>
     
     <!-- ElevenLabs Conversational AI Widget - Wrapped in positioned container -->
-    <div id="elevenlabs-widget-container" style="position: fixed; left: 20px; top: 60%; transform: translateY(-50%); z-index: 9998; pointer-events: none;">
+    <div id="elevenlabs-widget-container" style="position: fixed; left: 20px; bottom: 20px; top: auto; transform: none; z-index: 9998; pointer-events: none;">
       <elevenlabs-convai agent-id="agent_7701k80ng0s4e9dasnydy605s42g" style="pointer-events: auto;"></elevenlabs-convai>
     </div>
     <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
