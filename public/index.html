@@ -31,127 +31,89 @@
       }
     </style>
     <script>
-      // Inject styles into shadow DOM to fix positioning
-      function injectShadowStyles() {
-        const widget = document.querySelector('elevenlabs-convai');
-        if (!widget || !widget.shadowRoot) return;
-        
-        const shadowRoot = widget.shadowRoot;
-        
-        // Ensure widget element has proper display
-        widget.style.display = 'block';
-        widget.style.width = 'auto';
-        widget.style.height = 'auto';
-        widget.style.minWidth = '280px';
-        
-        // Find the root container div (first child of shadow root)
-        const rootContainer = shadowRoot.firstElementChild;
-        if (rootContainer) {
-          const rect = rootContainer.getBoundingClientRect();
-          const computedStyle = window.getComputedStyle(rootContainer);
-          const inlineStyle = rootContainer.getAttribute('style') || '';
-          
-          // Check if it's positioned off-screen or using fixed positioning
-          const isOffScreen = rect.left < -50 || rect.left > window.innerWidth;
-          const isFixed = computedStyle.position === 'fixed' || inlineStyle.includes('position: fixed') || inlineStyle.includes('position:fixed');
-          
-          if (isFixed || isOffScreen) {
-            // Force to static/relative and reset positioning
-            rootContainer.style.setProperty('position', 'static', 'important');
-            rootContainer.style.setProperty('left', 'auto', 'important');
-            rootContainer.style.setProperty('right', 'auto', 'important');
-            rootContainer.style.setProperty('top', 'auto', 'important');
-            rootContainer.style.setProperty('bottom', 'auto', 'important');
-            rootContainer.style.setProperty('transform', 'none', 'important');
-            rootContainer.style.setProperty('margin', '0', 'important');
-          }
-        }
-        
-        // Find and fix any other fixed-positioned elements
-        const allElements = shadowRoot.querySelectorAll('*');
-        allElements.forEach(function(el) {
-          const computedStyle = window.getComputedStyle(el);
-          const inlineStyle = el.getAttribute('style') || '';
-          const rect = el.getBoundingClientRect();
-          
-          // Only fix if it's actually fixed AND off-screen
-          if ((computedStyle.position === 'fixed' || inlineStyle.includes('position: fixed') || inlineStyle.includes('position:fixed')) && 
-              (rect.left < -50 || rect.left > window.innerWidth)) {
-            el.style.setProperty('position', 'static', 'important');
-            el.style.setProperty('left', 'auto', 'important');
-            el.style.setProperty('right', 'auto', 'important');
-            el.style.setProperty('top', 'auto', 'important');
-            el.style.setProperty('bottom', 'auto', 'important');
-            el.style.setProperty('transform', 'none', 'important');
-          }
-        });
-        
-        // Inject minimal CSS - only target fixed positioned elements that are problematic
-        let styleEl = shadowRoot.querySelector('style[data-position-fix]');
-        if (!styleEl) {
-          styleEl = document.createElement('style');
-          styleEl.setAttribute('data-position-fix', 'true');
-          shadowRoot.insertBefore(styleEl, shadowRoot.firstChild);
-        }
-        
-        styleEl.textContent = `
-          :host > *:first-child {
-            position: static !important;
-            left: auto !important;
-            right: auto !important;
-            top: auto !important;
-            bottom: auto !important;
-            transform: none !important;
-            margin: 0 !important;
-          }
-        `;
-      }
-      
-      // Ensure widget container stays positioned correctly
-      function ensureWidgetPosition() {
+      // Continuous fix that runs forever to override ElevenLabs positioning
+      function forceWidgetPosition() {
+        // Fix container
         const container = document.getElementById('elevenlabs-widget-container');
         if (container) {
-          container.style.cssText = `
-            position: fixed !important;
-            left: 20px !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            z-index: 9998 !important;
-            pointer-events: none !important;
-          `;
+          container.style.cssText = 'position: fixed !important; left: 20px !important; top: 50% !important; transform: translateY(-50%) !important; z-index: 9998 !important; pointer-events: none !important;';
         }
         
-        // Inject shadow DOM styles
-        injectShadowStyles();
+        // Fix widget element
+        const widget = document.querySelector('elevenlabs-convai');
+        if (widget) {
+          widget.style.cssText = 'position: relative !important; display: block !important; width: auto !important; height: auto !important; min-width: 280px !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; transform: none !important;';
+          
+          // Fix shadow DOM if it exists
+          if (widget.shadowRoot) {
+            const shadowRoot = widget.shadowRoot;
+            
+            // Find ALL elements and force them to not use fixed positioning
+            const allElements = shadowRoot.querySelectorAll('*');
+            allElements.forEach(function(el) {
+              const rect = el.getBoundingClientRect();
+              const computed = window.getComputedStyle(el);
+              
+              // If element is off-screen (left < 0 or way off to the right) OR using fixed positioning
+              if (rect.left < 0 || rect.left > window.innerWidth || computed.position === 'fixed') {
+                el.style.setProperty('position', 'static', 'important');
+                el.style.setProperty('left', 'auto', 'important');
+                el.style.setProperty('right', 'auto', 'important');
+                el.style.setProperty('top', 'auto', 'important');
+                el.style.setProperty('bottom', 'auto', 'important');
+                el.style.setProperty('transform', 'none', 'important');
+                el.style.setProperty('margin', '0', 'important');
+              }
+            });
+            
+            // Inject CSS that forces everything to static
+            let styleEl = shadowRoot.querySelector('style[data-force-position]');
+            if (!styleEl) {
+              styleEl = document.createElement('style');
+              styleEl.setAttribute('data-force-position', 'true');
+              shadowRoot.insertBefore(styleEl, shadowRoot.firstChild);
+            }
+            styleEl.textContent = '* { position: static !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; transform: none !important; }';
+          }
+        }
       }
       
-      // Run on load
+      // Run immediately and continuously
+      forceWidgetPosition();
+      
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', ensureWidgetPosition);
-      } else {
-        ensureWidgetPosition();
+        document.addEventListener('DOMContentLoaded', forceWidgetPosition);
       }
       
-      window.addEventListener('load', ensureWidgetPosition);
-      window.addEventListener('resize', ensureWidgetPosition);
+      window.addEventListener('load', forceWidgetPosition);
+      window.addEventListener('resize', forceWidgetPosition);
       
-      // Aggressive polling to catch shadow DOM initialization
-      let attempts = 0;
-      const interval = setInterval(function() {
-        ensureWidgetPosition();
-        attempts++;
-        if (attempts > 40) clearInterval(interval);
-      }, 500);
+      // Run continuously every 100ms to override ElevenLabs script
+      setInterval(forceWidgetPosition, 100);
       
-      // MutationObserver for shadow DOM changes
-      const observer = new MutationObserver(function() {
-        ensureWidgetPosition();
-      });
+      // MutationObserver on body
+      const bodyObserver = new MutationObserver(forceWidgetPosition);
+      bodyObserver.observe(document.body, { childList: true, subtree: true });
       
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
+      // MutationObserver on widget shadow DOM when it exists
+      function observeShadowDOM() {
+        const widget = document.querySelector('elevenlabs-convai');
+        if (widget && widget.shadowRoot) {
+          const shadowObserver = new MutationObserver(forceWidgetPosition);
+          shadowObserver.observe(widget.shadowRoot, { 
+            childList: true, 
+            subtree: true, 
+            attributes: true,
+            attributeFilter: ['style']
+          });
+        }
+      }
+      
+      // Check for shadow DOM periodically
+      setInterval(function() {
+        observeShadowDOM();
+        forceWidgetPosition();
+      }, 200);
     </script>
   </head>
   <body>
