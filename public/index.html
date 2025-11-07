@@ -18,11 +18,57 @@
       elevenlabs-convai {
         position: fixed !important;
         left: 20px !important;
+        right: auto !important;
         top: 50% !important;
+        bottom: auto !important;
         transform: translateY(-50%) !important;
         z-index: 9998 !important;
       }
+      
+      /* Target any shadow DOM or internal containers */
+      elevenlabs-convai > *,
+      elevenlabs-convai::shadow > * {
+        left: 0 !important;
+        right: auto !important;
+      }
     </style>
+    <script>
+      // Force widget to left side - runs multiple times to catch async loading
+      function positionWidget() {
+        const widget = document.querySelector('elevenlabs-convai');
+        if (widget) {
+          widget.style.cssText = 'position: fixed !important; left: 20px !important; right: auto !important; top: 50% !important; bottom: auto !important; transform: translateY(-50%) !important; z-index: 9998 !important;';
+          
+          // Also try to find and position any internal containers
+          const iframe = widget.querySelector('iframe');
+          if (iframe) {
+            iframe.style.cssText = 'left: 0 !important; right: auto !important;';
+          }
+        }
+      }
+      
+      // Run immediately and on load
+      positionWidget();
+      window.addEventListener('load', positionWidget);
+      
+      // Use MutationObserver to catch when widget is added to DOM
+      const observer = new MutationObserver(function(mutations) {
+        positionWidget();
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
+      // Also run periodically for first 5 seconds to catch async loading
+      let attempts = 0;
+      const interval = setInterval(function() {
+        positionWidget();
+        attempts++;
+        if (attempts > 10) clearInterval(interval);
+      }, 500);
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
