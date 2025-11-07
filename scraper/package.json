@@ -1,0 +1,16 @@
+{
+  "name": "stoja-trade-scraper",
+  "version": "1.0.0",
+  "description": "Web scraper for stoja-trade.si to build RAG knowledge base",
+  "main": "stoja-scraper.js",
+  "scripts": {
+    "scrape": "node stoja-scraper.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "author": "L² Flows",
+  "license": "MIT"
+}
+
