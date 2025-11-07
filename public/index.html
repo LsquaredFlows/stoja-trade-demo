@@ -67,33 +67,93 @@
               }
             });
             
-            // Hide "Powered by ElevenLabs" footer
-            const footerElements = shadowRoot.querySelectorAll('p, span, div');
-            footerElements.forEach(function(el) {
-              const text = el.textContent || '';
-              if (text.includes('Powered by ElevenLabs') || text.includes('ElevenLabs')) {
-                el.style.setProperty('display', 'none', 'important');
-                el.style.setProperty('visibility', 'hidden', 'important');
-                el.style.setProperty('opacity', '0', 'important');
+            // COMPREHENSIVE HIDING STRATEGY
+            function hideElementCompletely(el) {
+              el.style.setProperty('display', 'none', 'important');
+              el.style.setProperty('visibility', 'hidden', 'important');
+              el.style.setProperty('opacity', '0', 'important');
+              el.style.setProperty('height', '0', 'important');
+              el.style.setProperty('width', '0', 'important');
+              el.style.setProperty('padding', '0', 'important');
+              el.style.setProperty('margin', '0', 'important');
+              el.style.setProperty('overflow', 'hidden', 'important');
+              el.style.setProperty('pointer-events', 'none', 'important');
+            }
+            
+            // 1. Hide all canvas elements (gradient rendering)
+            shadowRoot.querySelectorAll('canvas').forEach(hideElementCompletely);
+            
+            // 2. Hide elements by text content (branding)
+            function hideByText(element) {
+              const text = (element.textContent || '').trim().toLowerCase();
+              if (text.includes('powered by') || text.includes('elevenlabs') || text.includes('agents') || 
+                  text.includes('eleven') || text.includes('labs')) {
+                hideElementCompletely(element);
+                // Also hide parent if it's a small container
+                if (element.parentElement) {
+                  const parentText = (element.parentElement.textContent || '').trim();
+                  if (parentText.length < 100) {
+                    hideElementCompletely(element.parentElement);
+                  }
+                }
+              }
+              Array.from(element.children || []).forEach(hideByText);
+            }
+            hideByText(shadowRoot);
+            
+            // 3. Hide elements by class/attribute patterns
+            shadowRoot.querySelectorAll('*').forEach(function(el) {
+              const className = (el.className || '').toLowerCase();
+              const id = (el.id || '').toLowerCase();
+              if (className.includes('powered') || className.includes('elevenlabs') || 
+                  className.includes('footer') || className.includes('branding') ||
+                  id.includes('powered') || id.includes('elevenlabs') || id.includes('footer')) {
+                hideElementCompletely(el);
               }
             });
             
-            // Hide gradient/oval decorative elements (canvas or elements with gradient backgrounds)
-            const allElementsForHiding = shadowRoot.querySelectorAll('*');
-            allElementsForHiding.forEach(function(el) {
-              const computed = window.getComputedStyle(el);
-              const bg = computed.backgroundImage || computed.background || '';
-              // Hide elements with gradient backgrounds (the blue/teal oval)
-              if (bg.includes('gradient') || bg.includes('linear-gradient') || bg.includes('radial-gradient')) {
+            // 4. Hide gradient/oval decorative elements
+            shadowRoot.querySelectorAll('*').forEach(function(el) {
+              try {
+                const computed = window.getComputedStyle(el);
+                const bg = (computed.backgroundImage || computed.background || '').toLowerCase();
                 const rect = el.getBoundingClientRect();
-                // Only hide if it's a decorative element (not the main container)
-                if (rect.width > 50 && rect.height > 50 && el.tagName !== 'DIV') {
-                  el.style.setProperty('display', 'none', 'important');
+                
+                // Hide elements with gradients that are decorative (not main UI)
+                if (bg.includes('gradient') && rect.width > 40 && rect.height > 40) {
+                  // Check if it's likely decorative (not a button or input)
+                  if (el.tagName !== 'BUTTON' && el.tagName !== 'INPUT' && 
+                      !el.closest('button') && !el.closest('input')) {
+                    hideElementCompletely(el);
+                  }
+                }
+                
+                // Hide elements with very specific gradient colors (blue/teal)
+                if (bg.includes('rgb') && (bg.includes('0,') || bg.includes('blue') || bg.includes('teal'))) {
+                  if (rect.width > 50 && rect.height > 50 && el.tagName === 'DIV') {
+                    const zIndex = parseInt(computed.zIndex) || 0;
+                    if (zIndex > 0 && zIndex < 10) {
+                      hideElementCompletely(el);
+                    }
+                }
+              }
+              } catch(e) {}
+            });
+            
+            // 5. Hide small text elements at bottom (likely footer)
+            shadowRoot.querySelectorAll('p, span, div, footer').forEach(function(el) {
+              const rect = el.getBoundingClientRect();
+              const text = (el.textContent || '').trim();
+              // If it's small text at bottom of widget, likely branding
+              if (text.length > 0 && text.length < 50 && rect.height < 30) {
+                const widgetRect = widget.getBoundingClientRect();
+                if (rect.top > widgetRect.top + widgetRect.height * 0.7) {
+                  hideElementCompletely(el);
                 }
               }
             });
             
-            // Inject CSS that forces everything to static AND hides unwanted elements
+            // Inject comprehensive CSS
             let styleEl = shadowRoot.querySelector('style[data-force-position]');
             if (!styleEl) {
               styleEl = document.createElement('style');
@@ -102,27 +162,9 @@
             }
             styleEl.textContent = `
               * { position: static !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; transform: none !important; }
-              p, span, div {
-                position: static !important;
-              }
+              canvas { display: none !important; visibility: hidden !important; opacity: 0 !important; }
+              p, span, div, footer { position: static !important; }
             `;
-            
-            // More aggressive hiding - find elements by text content recursively
-            function hideByText(element) {
-              const text = (element.textContent || '').trim();
-              if (text.includes('Powered by') || text.includes('ElevenLabs') || text.includes('Agents')) {
-                element.style.setProperty('display', 'none', 'important');
-                element.style.setProperty('visibility', 'hidden', 'important');
-                element.style.setProperty('opacity', '0', 'important');
-                element.style.setProperty('height', '0', 'important');
-                element.style.setProperty('width', '0', 'important');
-                element.style.setProperty('padding', '0', 'important');
-                element.style.setProperty('margin', '0', 'important');
-              }
-              // Check children
-              Array.from(element.children).forEach(hideByText);
-            }
-            hideByText(shadowRoot);
           }
         }
       }
