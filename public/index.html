@@ -17,43 +17,75 @@
     <style>
       elevenlabs-convai {
         position: fixed !important;
-        left: 40px !important;
+        left: 60px !important;
         right: auto !important;
         top: 50% !important;
         bottom: auto !important;
         transform: translateY(-50%) !important;
         z-index: 9998 !important;
-      }
-      
-      /* Target any shadow DOM or internal containers */
-      elevenlabs-convai > *,
-      elevenlabs-convai::shadow > * {
-        left: 0 !important;
-        right: auto !important;
+        max-width: 400px !important;
+        width: auto !important;
       }
     </style>
     <script>
-      // Force widget to left side - runs multiple times to catch async loading
+      // Force widget to left side with proper visibility
       function positionWidget() {
         const widget = document.querySelector('elevenlabs-convai');
         if (widget) {
-          widget.style.cssText = 'position: fixed !important; left: 40px !important; right: auto !important; top: 50% !important; bottom: auto !important; transform: translateY(-50%) !important; z-index: 9998 !important;';
+          // Get widget dimensions to ensure it's fully visible
+          const rect = widget.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
           
-          // Also try to find and position any internal containers
-          const iframe = widget.querySelector('iframe');
-          if (iframe) {
-            iframe.style.cssText = 'left: 0 !important; right: auto !important;';
+          // Position on left, ensure it's fully visible
+          let leftPos = 60;
+          let topPos = '50%';
+          
+          // If widget is too wide or going off-screen, adjust
+          if (rect.width > 0 && leftPos + rect.width > viewportWidth) {
+            leftPos = Math.max(20, viewportWidth - rect.width - 20);
           }
+          
+          widget.style.cssText = `
+            position: fixed !important;
+            left: ${leftPos}px !important;
+            right: auto !important;
+            top: ${topPos} !important;
+            bottom: auto !important;
+            transform: translateY(-50%) !important;
+            z-index: 9998 !important;
+            max-width: 400px !important;
+            width: auto !important;
+          `;
+          
+          // Also check for any internal iframes or containers
+          const allElements = widget.querySelectorAll('*');
+          allElements.forEach(function(el) {
+            if (el.tagName === 'IFRAME' || el.style.position === 'fixed') {
+              el.style.left = '0 !important';
+              el.style.right = 'auto !important';
+            }
+          });
         }
       }
       
-      // Run immediately and on load
-      positionWidget();
+      // Run immediately
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', positionWidget);
+      } else {
+        positionWidget();
+      }
+      
       window.addEventListener('load', positionWidget);
+      window.addEventListener('resize', positionWidget);
       
       // Use MutationObserver to catch when widget is added to DOM
       const observer = new MutationObserver(function(mutations) {
-        positionWidget();
+        mutations.forEach(function(mutation) {
+          if (mutation.addedNodes.length > 0) {
+            positionWidget();
+          }
+        });
       });
       
       observer.observe(document.body, {
@@ -61,12 +93,12 @@
         subtree: true
       });
       
-      // Also run periodically for first 5 seconds to catch async loading
+      // Run periodically for first 10 seconds to catch async loading
       let attempts = 0;
       const interval = setInterval(function() {
         positionWidget();
         attempts++;
-        if (attempts > 10) clearInterval(interval);
+        if (attempts > 20) clearInterval(interval);
       }, 500);
     </script>
   </head>
